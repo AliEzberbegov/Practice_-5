@@ -19,7 +19,7 @@ public class WebDriverManager {
 
     private static final Properties props = new Properties();
 
-    // Статический блок: подгружаем config.properties один раз
+    //Подгружаем config.properties
     static {
         try (InputStream input = new FileInputStream("src/test/resources/config.properties")) {
             props.load(input);
