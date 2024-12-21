@@ -19,8 +19,8 @@ public class AddExistProductSteps {
 
     private WebDriver driver;
     private static final Logger logger = LoggerFactory.getLogger(AddExistProductSteps.class);
-    private static final String URL = "http://localhost:8080";
-    private static final String DB_URL = "jdbc:h2:tcp://localhost:9092/mem:testdb";
+    private static final String URL = "https://qualit.applineselenoid.fvds.ru/";
+    private static final String DB_URL = "jdbc:h2:tcp://qualit.applineselenoid.fvds.ru/mem:testdb";
     private static final String DB_USER = "user";
     private static final String DB_PASSWORD = "pass";
 
