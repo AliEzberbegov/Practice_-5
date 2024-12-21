@@ -1,8 +1,8 @@
 package ibs.practice.steps;
 
+import ibs.practice.utils.WebDriverManager;
 import io.cucumber.java.ru.*;
 import org.openqa.selenium.*;
-import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.support.ui.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +17,8 @@ public class AddProductSteps {
 
     private WebDriver driver;
     private static final Logger logger = LoggerFactory.getLogger(AddProductSteps.class);
+
+    // URL стенда и параметры для БД:
     private static final String URL = "http://localhost:8080";
     private static final String DB_URL = "jdbc:h2:tcp://localhost:9092/mem:testdb";
     private static final String DB_USER = "user";
@@ -24,12 +26,13 @@ public class AddProductSteps {
 
     @Дано("стенд QualIT запущен и подключен к БД, открыта страница по адресу {string}")
     public void стенд_QualIT_запущен_и_подключен_к_БД(String url) {
+        // Инициализируем WebDriver через DriverManager
+        driver = WebDriverManager.createDriver();
 
-        System.setProperty("webdriver.chrome.driver", "src/test/resources/chromedriver.exe");
-        driver = new ChromeDriver();
         driver.manage().window().maximize();
-        driver.get(url);
         driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+        driver.get(url);
+
         logger.info("Тестирование стенда QualIT: {}", URL);
 
         // Открываем меню "Песочница"
@@ -56,9 +59,11 @@ public class AddProductSteps {
     @Тогда("в списке товаров отображается товар {string}")
     public void в_списке_товаров_отображается(String productName) {
         WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-        WebElement productRow = wait.until(ExpectedConditions.visibilityOfElementLocated(
-                By.xpath("//*[contains(text(),'" + productName + "')]")));
-        assertTrue(productRow.isDisplayed(), "Продукт " + productName + " должен быть отображен в списке товаров.");
+        WebElement productRow = wait.until(
+                ExpectedConditions.visibilityOfElementLocated(By.xpath("//*[contains(text(),'" + productName + "')]"))
+        );
+        assertTrue(productRow.isDisplayed(),
+                "Продукт " + productName + " должен быть отображен в списке товаров.");
     }
 
     @И("товар {string} добавлен в БД")
@@ -76,9 +81,8 @@ public class AddProductSteps {
         try {
             deleteProductsFromDB(productName);
             deleteProductsFromDB(productName1);
-            logger.info("Товары " + productName + " и " + productName1 + " успешно удалены из БД!");
+            logger.info("Товары '{}' и '{}' успешно удалены из БД!", productName, productName1);
             productsFromDB();
-
         } catch (Exception e) {
             logger.error("Ошибка во время удаления данных из БД: {}", e.getMessage());
         } finally {
@@ -91,7 +95,8 @@ public class AddProductSteps {
     @Затем("выполняется удаление товаров {string} и {string} через интерфейс стенда")
     public void сброс_данных_через_интерфейс(String productName, String productName1) throws InterruptedException {
         dataResetSandBoxMenu();
-        logger.info("Сброс данных выполнен! Продукты " + productName + " и " + productName1 + " удалены из списка товаров.");
+        logger.info("Сброс данных выполнен! Продукты '{}' и '{}' удалены из списка товаров.",
+                productName, productName1);
 
         if (driver != null) {
             Thread.sleep(3000);
@@ -109,8 +114,10 @@ public class AddProductSteps {
         addButton.click();
         logger.info("Открыто диалоговое окно добавления товара.");
 
-        // Заполняем данные в диалоговом окне
-        WebElement nameField = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//input[@id='name']")));
+        // Заполняем данные
+        WebElement nameField = wait.until(
+                ExpectedConditions.visibilityOfElementLocated(By.xpath("//input[@id='name']"))
+        );
         nameField.clear();
         nameField.sendKeys(productName);
         assertEquals(productName, nameField.getAttribute("value"),
@@ -130,7 +137,8 @@ public class AddProductSteps {
             exoticCheckbox.click();
         }
         assertEquals(isExotic, exoticCheckbox.isSelected(),
-                "Чекбокс 'Экзотический' должен быть " + (isExotic ? "активирован" : "не активирован") + ".");
+                "Чекбокс 'Экзотический' должен быть " +
+                        (isExotic ? "активирован" : "не активирован") + ".");
 
         // Сохраняем товар
         WebElement saveButton = driver.findElement(By.xpath("//button[@id='save']"));
@@ -143,12 +151,9 @@ public class AddProductSteps {
 
     // Метод для проверки наличия товаров в БД
     private void checkIfProductExistsInDB(String productName, boolean shouldExist) throws SQLException {
-
-        // Соединение с БД
         try (Connection connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
              Statement statement = connection.createStatement()) {
 
-            // Отправка и выполнение запроса
             String query = "SELECT * FROM food WHERE food_name = '" + productName + "';";
             try (ResultSet resultSet = statement.executeQuery(query)) {
                 boolean exists = resultSet.next();
@@ -166,12 +171,9 @@ public class AddProductSteps {
 
     // Метод для вывода всей таблицы продуктов БД
     private void productsFromDB() throws SQLException {
-
-        // Соединение с БД
         try (Connection connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
              Statement statement = connection.createStatement()) {
 
-            // Отправка и выполнение запроса
             String query = "SELECT FOOD_ID, FOOD_NAME, FOOD_TYPE, FOOD_EXOTIC FROM FOOD";
             try (ResultSet resultSet = statement.executeQuery(query)) {
                 while (resultSet.next()) {
@@ -179,7 +181,8 @@ public class AddProductSteps {
                     String food_name = resultSet.getString("FOOD_NAME");
                     String food_type = resultSet.getString("FOOD_TYPE");
                     boolean food_exotic = resultSet.getBoolean("FOOD_EXOTIC");
-                    logger.info("id:{}; name:{}; type:{}; exotic:{}.", food_id, food_name, food_type, food_exotic);
+                    logger.info("id:{}; name:{}; type:{}; exotic:{}.",
+                            food_id, food_name, food_type, food_exotic);
                 }
             }
         }
@@ -187,20 +190,16 @@ public class AddProductSteps {
 
     // Метод для удаления товаров из БД
     private void deleteProductsFromDB(String productName) throws SQLException {
-
-        // Соединение с БД
         try (Connection connection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASSWORD);
              Statement statement = connection.createStatement()) {
 
-            // Отправка запроса на удаление данных
             String query = "DELETE FROM food WHERE food_name = '" + productName + "';";
             statement.executeUpdate(query);
         }
     }
 
     //Метод для удаления товаров через интерфейс
-    public void dataResetSandBoxMenu() throws InterruptedException{
-
+    public void dataResetSandBoxMenu() throws InterruptedException {
         WebElement sandboxMenu = driver.findElement(By.xpath("//li[@class='nav-item dropdown']"));
         sandboxMenu.click();
 
@@ -208,4 +207,3 @@ public class AddProductSteps {
         sandboxMenuClear.click();
     }
 }
-

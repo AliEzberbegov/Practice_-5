@@ -2,7 +2,7 @@ package ibs.practice.steps;
 
 import io.cucumber.java.ru.*;
 import org.openqa.selenium.*;
-import org.openqa.selenium.chrome.ChromeDriver;
+import ibs.practice.utils.WebDriverManager;
 import org.openqa.selenium.support.ui.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,8 +27,7 @@ public class AddExistProductSteps {
     @Дано("стенд QualIT запущен и подключен к БД, страница {string} открыта")
     public void стенд_QualIT_запущен_и_подключен_к_БД(String url) {
 
-        System.setProperty("webdriver.chrome.driver", "src/test/resources/chromedriver.exe");
-        driver = new ChromeDriver();
+        driver = WebDriverManager.createDriver();
         driver.manage().window().maximize();
         driver.get(url);
         driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
